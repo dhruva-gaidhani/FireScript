@@ -1,0 +1,31 @@
+.bar{
+    fill: yellow;
+    stroke: #646464;
+    stroke-width: 1px;
+}
+
+.bar:hover{
+    transition-duration: 1s;
+    fill:red;
+    stroke: black;
+    stroke-width: 1px;
+}
+
+.svg{
+    margin-left: 20px;
+    padding-left: 10px;
+    border: 1px lightgray solid;
+    position:relative;
+    top: 30px; 
+    left: 50px; 
+    background-color: whitesmoke;
+}
+
+.menu{
+    left:50px;
+}
+
+#pie_chart:hover{
+    stroke: black;
+    stroke-width: 1px;
+}

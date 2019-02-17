@@ -12,8 +12,7 @@ class App extends Component {
     return (
       <div>
         <header>
-          <BarChart width={this.state.width} height={this.state.height} />
-          
+        <BarChart width={this.state.width} height={this.state.height} />
           
         </header>
       </div>
