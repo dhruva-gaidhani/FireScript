@@ -9,8 +9,6 @@ class BarChart extends Component{
       }
 
     drawChart() {
-
-
         var svg_width = 600, 
             svg_height = 400;
 
@@ -22,6 +20,17 @@ class BarChart extends Component{
         var fire_data = [];
 
         var rects, paths, bin_data;
+
+        var information = {
+            FFMC:"The Fine Fuel Moisture Code (FFMC) is a numeric rating of the moisture content of litter and other cured fine fuels.",
+            DC:"This is the Drought code that signifies long term effect of moisture on the environment.",
+            ISI:"The ISI is a measure of the head fire indicator and rate of fire spread. The higher ISI index indicates higher difficulty of control in grassland.",
+            temp:"This is the temperature recorded just before the fires were reported. The temperature is in degrees celsius.",
+            RH:"The moisture content of fine dead fuel such as pine needles and dried grasses responds rapidly to changes in relative humidity.",
+            wind:"The winds give an idea of the extent of spread of fire. The speeds are in Kilometer per hour.",
+            rain:"Forest fires caused due to lightning are usually followed by rain making them harder to detect.",
+            area:"The burned area of the forest. This is a highly skewed metric indicating that majority of fires were small.",
+        }
 
         d3.csv(data, function(error, line){
             for(var i = 0; i < line.length; i++){
@@ -38,7 +47,22 @@ class BarChart extends Component{
                     area: line[i].area
                 }
             }
+
+            var options = ["FFMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"];
+            var drop_down_menu = d3.select("#DropDown");
             
+            drop_down_menu.append("select")
+                .attr("class","menu")
+                .selectAll("option")
+                .data(options)
+                .enter()
+                .append("option")
+                .attr("value", function(d){
+                    return d;})
+                .text(function(d){
+                    return d;})
+            
+            //Create lower and higher bounds for the ranges of the attributes to display
             var fire_max = {
                 FFMC: d3.max(fire_data, function(d){return parseFloat(d.FFMC); }),
                 DC: d3.max(fire_data, function(d){return parseFloat(d.DC); }),
@@ -60,63 +84,33 @@ class BarChart extends Component{
                 area: d3.min(fire_data, function(d){return parseFloat(d.area); })
             }
 
-            var options = ["FFMC", "DC", "ISI", "temp", "RH", "wind", "rain", "area"];
-            var drop_down_menu = d3.select("#DropDown");
-            
-            drop_down_menu.append("select")
-                .attr("class","menu")
-                .selectAll("option")
-                .data(options)
-                .enter()
-                .append("option")
-                .attr("value", function(d){
-                    return d;
-                })
-                .text(function(d){
-                    return d;
-                })
-            
-            visualizeData("bar-chart", fire_data, 5, "RH");
+            var pass_data = {
+                type: "bar-chart",
+                data: fire_data,
+                divisions: 5,
+                attr: "FFMC"
+            }
+            visualizeData(pass_data);
 
-            /*bin_display = svg.append('text')
-                .text(bin_data.bin_num)             //TODO: check for function error
-                .attr("x", 0.9 * svg_width)
-                .attr("y", 0.1 * svg_height)
-                .style("text-anchor", "middle")
-                .attr("font-family", "ariel")
-                .attr("font-size", "28px")
-                .attr("border", "1px solid")
-                .style("fill", "black");*/
-
-            function visualizeData(chart_type, fire_data, bin_number, attribute){
-                
+            function visualizeData(pass_data){
+                var chart_type = pass_data.type, fire_data = pass_data.data;
+                var bin_number = pass_data.divisions, attribute = pass_data.attr;
                 //Initiate operation clean slate before re-creating visualization
                 //TODO: Ask Anagh about remove method
                 
                 //Add other garbage collection
-                svg.selectAll("#bar_xAxis").remove();
-                svg.selectAll("#bar_label").remove();
-                svg.selectAll("#bar_chart").remove();
-                svg.selectAll("#bar_range").remove();
-                svg.selectAll("#bar_y_Axis").remove();
-                svg.selectAll("#pie_label").remove();
-                svg.selectAll("#pie_chart").remove();
-                svg.selectAll("#axis").remove();
-                
+                cleanSlate();
+
                 bin_data = dynamic_bin_creation(chart_type, fire_data, bin_number, attribute);
                 
                 if(chart_type === "bar-chart"){
                     //console.log(bin_data)
-                    buildBarChart(bin_data);
+                    constructBars(bin_data);
                 }
-                else if(chart_type === "pie-chart"){
+                if(chart_type === "pie-chart"){
                     //console.log(bin_data)
-                    buildPieChart(bin_data);
+                    constructPies(bin_data);
                 }
-                else{
-                    console.log("Error: App does not support this visualization.")
-                }
-
             }
 
             function dynamic_bin_creation(chart_type, fire_data, bin_number, attribute){
@@ -125,68 +119,48 @@ class BarChart extends Component{
                 var index = 0, bin_data=[], bin_data_frequency=[];
                 
                 //Charting Variables
-                var scale, lowerBound = [], upperBound = [], bin_width = 0;
+                var scale, low_index = [], high_index = [], bin_width = 0;
+
+                var info = information[attribute];
 
                 //Recalculate plotting data
                 for (var i=0; i < bin_number; i++){
                     bin_data[i] = [];
                     bin_data_frequency[i] = 0;
-                    lowerBound[i] = 0;
-                    upperBound[i] = 0;
+                    low_index[i] = 0;
+                    high_index[i] = 0;
                 }
 
-                switch(attribute){
-                    case "FFMC":
-                        bin_width = Math.floor((fire_max.FFMC - fire_min.FFMC) / bin_number * 100) / 100;
-                        lowerBound[0] = fire_min.FFMC;
-                        upperBound[bin_number-1] = fire_max.FFMC;
-                        
-                        //Calculate the start-end ranges for all the values
-                        for (var it = 1; it < bin_number; it++) {
-                            lowerBound[it] = lowerBound[it-1] + bin_width;
-                            upperBound[it-1] = lowerBound[it];
-                        };
+                bin_width = Math.floor((fire_max[attribute] - fire_min[attribute]) / bin_number * 100) / 100;
+                low_index[0] = fire_min[attribute];
+                high_index[bin_number-1] = fire_max[attribute];
+                var j = "RH"
+                console.log(fire_min[j]);
+                console.log(fire_min.RH);
+                //Calculate the start-end ranges for all the values
+                for (var it = 1; it < bin_number; it++) {
+                    low_index[it] = low_index[it-1] + bin_width;
+                    high_index[it-1] = low_index[it];
+                };
 
-                        for (var iz = 0; iz < fire_data.length; iz++) {
-                            index = Math.floor((fire_data[iz].FFMC - fire_min.FFMC) / bin_width);
-                            
-                            if(index === bin_number){
-                                index--;
-                            }
-                            
-                            bin_data[index].push(fire_data[iz].FFMC);
-                            bin_data_frequency[index]++;
-                        }
-                        break;
-
-                    case "RH":
-                        bin_width = Math.floor((fire_max.RH - fire_min.RH) / bin_number * 100) / 100;
-                        lowerBound[0] = fire_min.RH;
-                        upperBound[bin_number-1] = fire_max.RH;
-                        
-                        //Calculate the start-end ranges for all the values
-                        for (var iqt = 1; iqt < bin_number; iqt++) {
-                            lowerBound[iqt] = lowerBound[iqt-1] + bin_width;
-                            upperBound[iqt-1] = lowerBound[iqt];
-                        };
-                        
-                        for (var itr = 0; itr < fire_data.length; itr++) {
-                            index = Math.floor((fire_data[itr].RH - fire_min.RH) / bin_width);
-                            
-                            if(index === bin_number){
-                                index--;
-                            }
-                            
-                            bin_data[index].push(fire_data[itr].RH);
-                            bin_data_frequency[index]++;
-                        }
-                        break;
-                    default: break;
-                }
-                
+                for (var iz = 0; iz < fire_data.length; iz++) {
+                    index = Math.floor((fire_data[iz][attribute] - fire_min[attribute]) / bin_width);
+                    
+                    if(index === bin_number){
+                        index--;
+                    }
+                    
+                    bin_data[index].push(fire_data[iz][attribute]);
+                    bin_data_frequency[index]++;
+                }     
+                scale = d3.scaleLinear()
+                .domain([0, d3.max(bin_data_frequency)])
+                .range([0, 0.75 * svg_height]);
+                   
 
                 //Leaving coloring to random for now
-
+                //This is only for the pie chart to differentiate between the
+                //different arcs
                 var color = [];
                 var c_min=0; 
                 var c_max=255;  
@@ -198,44 +172,43 @@ class BarChart extends Component{
                     ];
                 }
 
-                //Creating a scale
-
-                scale = d3.scaleLinear()
-                .domain([0, d3.max(bin_data_frequency)])
-                .range([0, 0.75 * svg_height]);
-
                 return {
-                    set: bin_data, 
                     count: bin_data_frequency,
+                    low_index: low_index,
+                    high_index: high_index,
                     chart_mode: chart_type, 
                     bin_number: bin_number,
                     attribute: attribute,
                     color: color,
                     scale: scale,
-                    lowerBound: lowerBound,
-                    upperBound: upperBound
+                    info: info
                 };
             }
 
 
             //TODO: BAR WIDTH IS OFF
-            function buildBarChart(bar_data){
+            function constructBars(bar_data){
                     // Create bars
-                var bar_w = (svg_width - 100) / bar_data.bin_number;
+                var width_bar = (svg_width - 100) / bar_data.bin_number;
                 
-                var bar_padding = bar_w * 0.3;
+                var bar_offset = width_bar * 0.3;
                 
                 //---------Just some print data-------------
                 svg.append("text")
                     .attr("transform", "translate(100,0)")
                     .attr("id","top_text")
-                    .attr("x", 200)
+                    .attr("x", 190)
+                    .attr("class", "axis")
                     .attr("y", 25)
                     .attr("font-size", "20px")
-                    .text("Number of forest fires by Month")
+                    .text("Number of forest fires by attribute")
                 //----------------------------
 
-                
+                d3.select("body")
+                    .append("text")
+                    .attr("class","info")
+                    .text(bar_data.info)
+
                 rects = svg.selectAll("rect")
                     .data(bar_data.count)
                     .enter()
@@ -243,15 +216,12 @@ class BarChart extends Component{
                     .attr("class", "bar")
                     .attr("id", "bar_chart")
                     .attr("x", function(d, i){
-                        return 46 + (i * bar_w * 1.019) + (bar_padding / 1.5);
-                    })
+                        return 46 + (i * width_bar * 1.019) + (bar_offset / 1.5);})
                     .attr("y", function(d, i){
-                        return 14.5 + 0.9 * svg_height - bar_data.scale(d);
-                    })
+                        return 14.5 + 0.9 * svg_height - bar_data.scale(d);})
                     .attr("height", function(d, i){
-                        return bar_data.scale(d);
-                    })
-                    .attr("width", bar_w - bar_padding);
+                        return bar_data.scale(d);})
+                    .attr("width", width_bar - bar_offset);
                 
                 
                 //----------------------Building the Y-Scale--------------------------------
@@ -281,11 +251,11 @@ class BarChart extends Component{
                 //-----------------Building the X-Scale-----------------------
                 var plot_bounds = []
 
-                for(i = 0; i < bar_data.upperBound.length; i++){
-                    plot_bounds.push(Math.floor(bar_data.lowerBound[i]*10)/10 + 
-                    " - " + Math.floor(bar_data.upperBound[i]*10)/10);
+                for(i = 0; i < bar_data.high_index.length; i++){
+                    plot_bounds.push(Math.floor(bar_data.low_index[i]*10)/10 + 
+                    " - " + Math.floor(bar_data.high_index[i]*10)/10);
                 }
-                console.log(plot_bounds);
+                //console.log(plot_bounds);
                 var xScale = d3.scaleBand()
                     .domain(plot_bounds)
                     .range([0, svg_width-50])
@@ -308,37 +278,41 @@ class BarChart extends Component{
             
             // Functions to handle mouse events
             
-            // Event 1: Click
+            // on click
             rects.on("click", function(d, i){
                 svg.selectAll("#bar_label").remove();
                 svg.selectAll("#bar_chart").remove();
                 svg.selectAll("#axis").remove();
-                //console.log(fire_data);
-                //console.log(bin_data);
-                //console.log(bar_data);
-                visualizeData("pie-chart", fire_data, bar_data.bin_number, bar_data.attribute);
-                //visualizeData(chart_type, fire_data, bin_number, attribute)
-                //visualizeData("bar-chart", fire_data, 5, "RH");
+                svg.selectAll("info").remove();
+
+                //Change pass data to visualize function
+                pass_data = {
+                    type: "pie-chart",
+                    data: fire_data,
+                    divisions: bar_data.bin_number,
+                    attr: bar_data.attribute
+                }
+
+                visualizeData(pass_data);
             });
             
-            // Event 2: Mouse over
+            //Mouse over
             rects.on("mouseover", function(d, i){
                 
                 d3.select(this)
                 	.transition()
-                    .attr("x", 46 + (i * bar_w * 1.019) + (bar_padding / 1.5) - 4)
-                    .attr("width", 8 + bar_w - bar_padding)
+                    .attr("x", 46 + (i * width_bar * 1.019) + (bar_offset / 1.5) - 4)
+                    .attr("width", 8 + width_bar - bar_offset)
                     .attr("y", 14.5 + 0.9 * svg_height - bar_data.scale(d) - 7)
                     .attr("height", bar_data.scale(d) + 8);
-                    // Add value above a bar
-                
+                    
                 svg.append("text")
                     .attr("id","bar_label")
                     .text(d)
-                    .attr("x", 80 + (i * bar_w ) + (bar_padding / 1.5) )
+                    .attr("x", 80 + (i * width_bar ) + (bar_offset / 1.5) )
                     .attr("y", 0)
                     .transition().duration(500)
-                    .attr("x", 80 + (i * bar_w ) + (bar_padding / 1.5) )
+                    .attr("x", 80 + (i * width_bar ) + (bar_offset / 1.5) )
                     .attr("y", 14.5 + 0.9 * svg_height - bar_data.scale(d) -25)
                     .style("text-anchor", "middle")
                     .attr("font-family", "sans-serif")
@@ -347,12 +321,12 @@ class BarChart extends Component{
 
             });
     
-            // Event 3: Mouse out 
+            //Mouse Out
             rects.on("mouseout", function(d, i) { 
                 d3.select(this)
                		.transition().duration(500)
-                    .attr("x", 46 + (i * bar_w * 1.019) + (bar_padding / 1.5))
-                    .attr("width", bar_w - bar_padding)
+                    .attr("x", 46 + (i * width_bar * 1.019) + (bar_offset / 1.5))
+                    .attr("width", width_bar - bar_offset)
                     .attr("y", 14.5 + 0.9 * svg_height - bar_data.scale(d))
                     .attr("height", bar_data.scale(d));
             
@@ -360,20 +334,36 @@ class BarChart extends Component{
                 d3.selectAll("#bar_label")
                 .transition()
                 .duration(200)
-                .attr("x", 46 + (i * bar_w * 1.019) + (bar_padding / 1.5))
+                .attr("x", 46 + (i * width_bar * 1.019) + (bar_offset / 1.5))
                 .attr("y", 0)
                 .remove();
             });
         };
 
 
-        function buildPieChart(pie_data){
+        function constructPies(pie_data){
                 
             var pie_arc = d3.arc()
                 .outerRadius(150)
                 .innerRadius(75);
             
             var pie = d3.pie().sort(null);
+
+            
+            d3.select("body")
+                .append("text")
+                .attr("class","info")
+                .text(pie_data.info)
+                
+            svg.append("text")
+                    .attr("transform", "translate(100,0)")
+                    .attr("id","top_text")
+                    .attr("x", 190)
+                    .attr("id","pie_chart")
+                    .attr("y", 25)
+                    .attr("font-size", "20px")
+                    .text("Number of forest fires by attribute")
+
 
             paths = svg.append("g")
                 .attr("transform", "translate(190,175)")
@@ -389,15 +379,22 @@ class BarChart extends Component{
                 });
 
 
-            // Add mouse events
-            // Event 1: On Click
+            // Mouse behavior
+            // On Click
             paths.on("click", function(d, i){
                 svg.selectAll("#pie_label").remove();
                 svg.selectAll("#pie_chart").remove();
-                visualizeData("bar-chart", fire_data, pie_data.bin_number, pie_data.attribute);
+                svg.selectAll("info").remove();
+                pass_data = {
+                    type: "bar-chart",
+                    data: fire_data,
+                    divisions: pie_data.bin_number,
+                    attr: pie_data.attribute
+                }
+                visualizeData(pass_data);
             });
             
-            // Event 2: Mouse over
+            // On mouse over
             paths.on("mouseover", function(d, i){
                 var new_pie_arc = d3.arc()
                 .outerRadius(175)
@@ -418,7 +415,8 @@ class BarChart extends Component{
 
                 svg.select("g")
                     .append("text")
-                    .text(pie_data.attribute + " : [" + pie_data.lowerBound[i] + " - " + pie_data.upperBound[i] + "]")
+                    .text(pie_data.attribute + " : [" + Math.floor(pie_data.low_index[i]*10)/10 + 
+                                            " - " + Math.floor(pie_data.high_index[i]*10)/10 + "]")
                     .attr("id","pie_label")
                     .style("text-anchor", "middle")
                     .attr("font-family", "sans-serif")
@@ -428,14 +426,14 @@ class BarChart extends Component{
             })
 
 
-            //Event 3: Mouse Over
+            //Mouse Over
             paths.on("mouseout", function(d, i) { 
                 d3.select(this)
                 	.transition().duration(500)
                     .attr("d", pie_arc)
                     .style("fill", "rgba(" + pie_data.color[i][0] + ", " + pie_data.color[i][1] + ", " 
                         + pie_data.color[i][2] + ", 0.75)");
-                // Remove text label
+                
                 d3.selectAll("#pie_label").remove();
                 
             });
@@ -444,7 +442,13 @@ class BarChart extends Component{
             //Function to plot chosen attribute
 
             function plot(attribute){
-                visualizeData(bin_data.chart_mode, fire_data, bin_data.bin_number, attribute);
+                pass_data = {
+                    type: bin_data.chart_mode,
+                    data: fire_data,
+                    divisions: bin_data.bin_number,
+                    attr: attribute
+                }
+                visualizeData(pass_data);
             }
 
             //Function for the drop down menu
@@ -456,13 +460,33 @@ class BarChart extends Component{
 
                 plot(selected_attribute);
             });
-        // Add events for buttons and slider bar
-        //console.log(d3.selectAll(".slider_inside"));
-        d3.selectAll(".slider_inside")
+
+        // Mouse over handler for bin size mod
+        // Group the bins together
+        // iterate through them and recall visualizeData function always
+        d3.selectAll(".touch_controller")
              .on("mouseover", function(d,i){
                  console.log(i);
-                 visualizeData(bin_data.chart_mode, fire_data, i+1, bin_data.attribute);
+                 pass_data = {
+                    type: bin_data.chart_mode,
+                    data: fire_data,
+                    divisions: i+1,
+                    attr: bin_data.attribute
+                }
+                 visualizeData(pass_data);
              });
+        
+        //Call this function while building a new canvas
+        //Remove everything on the screen
+        function cleanSlate(){
+
+                svg.selectAll("info").remove();
+                svg.selectAll("#bar_label").remove();
+                svg.selectAll("#bar_chart").remove();
+                svg.selectAll("#pie_label").remove();
+                svg.selectAll("#pie_chart").remove();
+                svg.selectAll("#axis").remove();
+            }
             }
         );                 
       }

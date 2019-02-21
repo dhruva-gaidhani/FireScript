@@ -21,7 +21,6 @@ body {
 }
 
 .slider{
-  border: 3px solid slategray;
   width: 400px;
   height: 80px;
   padding: 0px;
@@ -31,7 +30,8 @@ body {
   background: url("./touch.png") no-repeat center;
   background-size: 13%;
 }
-.slider_inside{
+
+.touch_controller{
   margin: 0;
   padding: 0;
   display: inline-block; 
@@ -39,9 +39,14 @@ body {
   height: 50px;
   padding: 0px;
 }
-.player{
-  display: inline-block;            
-  margin-top: 10px;
-  font: 20px serif;
-  height: 400px;
+
+.ginfo{
+    margin-left: 20px;
+    padding-left: 10px;
+    position: absolute;;
+    top: 50px; 
+    left: 700px;
+    height: 30px;
+    width: 150px;
+    color: black;
 }

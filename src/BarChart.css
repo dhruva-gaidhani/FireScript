@@ -29,3 +29,18 @@
     stroke: black;
     stroke-width: 1px;
 }
+
+.info{
+    margin-left: 20px;
+    margin-right: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border: 1px lightgray solid;
+    position: absolute;;
+    top: 90px; 
+    left: 700px;
+    height: 200px;
+    width: 150px;
+    background-color: black;
+    color: white;
+}
