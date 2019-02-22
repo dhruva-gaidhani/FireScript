@@ -1,6 +1,9 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-#Screenshots:
+## Screenshots:
+
+![alt text](https://github.com/dhruva-gaidhani/FireScript/Screenshots/Capture1.PNG)
+      
 
 
 ## Available Scripts
