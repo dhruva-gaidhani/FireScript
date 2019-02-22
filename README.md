@@ -2,7 +2,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Screenshots:
 
-![alt text](https://github.com/dhruva-gaidhani/FireScript/Screenshots/Capture1.PNG)
+![alt text](https://github.com/dhruva-gaidhani/FireScript/Screenshots/Capture1.png)
       
 
 
