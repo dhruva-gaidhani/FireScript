@@ -2,7 +2,8 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Screenshots:
 
-![alt text](https://github.com/dhruva-gaidhani/FireScript/Screenshots/Capture1.png)
+![alt text](https://github.com/dhruva-gaidhani/FireScript/blob/master/Screenshots/Capture1.PNG)
+1. Load page produces Bar graphs plotting the histogram for FFMC parameter
       
 
 
