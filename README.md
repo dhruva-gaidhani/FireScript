@@ -5,7 +5,15 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 ![alt text](https://github.com/dhruva-gaidhani/FireScript/blob/master/Screenshots/Capture1.PNG)
 1. Load page produces Bar graphs plotting the histogram for FFMC parameter
       
+-------------------------------
 
+![alt text](https://github.com/dhruva-gaidhani/FireScript/blob/master/Screenshots/Capture2.PNG)
+2. Mouse-over function behaviour
+
+-------------------------------
+
+![alt text](https://github.com/dhruva-gaidhani/FireScript/blob/master/Screenshots/Capture3.PNG)
+3. On-click transform to bar-chart
 
 ## Available Scripts
 
